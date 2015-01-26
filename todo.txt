@@ -1,0 +1,3 @@
+. Thread Lock all variable assignments - Is it better to create get and set accessors? 
+. add resets for when state changes - counter for incorrect keypass entries should be set back to 0 when the state changes to disarmed or armed
+. 
