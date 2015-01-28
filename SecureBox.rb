@@ -1,3 +1,6 @@
+##
+## Core functionality of the Secure Box
+##
 require './Path.rb'
 require 'colorize'
 require './Logger.rb'
@@ -58,7 +61,7 @@ class SecureBox
 		@invalid_keypass_counter = 0
 		Logger.print("Initialized.", Logger.info)
 		Logger.print("Current State is #{current_state}", Logger.details)
-		beep(400)
+		beep(events.key("KEYPASS_SUCCESS"))
 	end
 
 	def current_state
@@ -80,15 +83,16 @@ class SecureBox
 		Logger.print("Current State is #{@current_state}", Logger.details)
 	end
 
+	private
+
 	def initiate_trigger(event, trigger_state, previous_state)
 		# initiates triggers for each specific event. 
 		# custom code goes here
 		if event == events.key('DOOR_OPEN') and events.key(trigger_state) == events.key('ARMED')
-			beep(500)
 			Logger.print("Event - #{events[event]}", Logger.log)
 			Thread.new { trigger_door_open }
 		elsif event == events.key('KEYPASS_FAIL') and events.key(trigger_state) == events.key('DISARMED')
-			beep(500)
+			beep(events.key('KEYPASS_FAIL'))
 			Logger.print("Event - #{events[event]}", Logger.log)
 			Thread.new { trigger_keypass_fail_in_disarmed_state }
 		elsif event == events.key('KEYPASS_FAIL') and events.key(previous_state) == events.key("ARMED")
@@ -104,13 +108,14 @@ class SecureBox
 			@invalid_keypass_counter = @invalid_keypass_counter + 1
 			Logger.print("Incorrect Keycode - Attempt #{@invalid_keypass_counter.to_s}", Logger.warning)
 			if (@invalid_keypass_counter > 5)
-				beep(300)
+				beep(events.key('SIREN'))
 				@current_state = events[siren]
+				Thread.new { trigger_siren_mode }
 				Logger.print("Current State is #{@current_state}", Logger.details)
 			end
 		}
 		Logger.print("Stopping Thread: trigger_keypass_fail", Logger.info)
-		Thread.stop
+		Thread.kill
 	end
 
 	def trigger_door_open
@@ -142,21 +147,21 @@ class SecureBox
 		end
 		Logger.print("Stopping Thread: trigger_door_open", Logger.info)
 		Logger.print("Current State is #{@current_state}", Logger.details)
-		Thread.stop
+		Thread.kill
 	end
 
 	def trigger_siren_mode
 		Logger.print("Starting Thread: trigger_siren_mode", Logger.info)
 		while (true) do
 			if (events.key(current_state) == events.key("SIREN"))
-				beep(300)
+				beep(events.key("SIREN"))
 				sleep(5)
 			else
 				break
 			end
 		end
 		Logger.print("Stopping Thread: trigger_siren_mode", Logger.info)
-		Thread.stop
+		Thread.kill
 	end
 
 	def current_time_in_ms(seconds_offset)
