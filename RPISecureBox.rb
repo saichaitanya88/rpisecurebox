@@ -44,7 +44,7 @@ class RPISecureBox
 	def door_open
 		@secure_box.process_event(600)
 	end
-	
+
 	def secure_box
 		return @secure_box
 	end
